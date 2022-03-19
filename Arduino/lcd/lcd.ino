@@ -1,8 +1,8 @@
 #include <Keypad.h>
 #include <LiquidCrystal_I2C.h>
-const int backButton = 2;
+const int backButton = 4;
 const int nextButton = 3;
-const int selectButton = 8;
+const int selectButton = 2;
 const int gndPin = 11;
 const int millisInDay = 86400000;
 
@@ -14,23 +14,76 @@ int count;
 unsigned long startTine;
 unsigned long tempTime;
 int days;
+int i;
 
 String input = "";
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 struct plant{
-    String plantName;
-    float phHigh;
+  String plantName;
+  float phHigh;
 };
+
 
 plant jandaBolong = {"Janda Bolong", 10};
 plant kantongSemar = {"Kantong Semar", 9.5};
 plant cocorBebek = {"Cocor Bebek", 9.75};
 plant plants [3] = {jandaBolong, kantongSemar, cocorBebek};
 
-int i;
-boolean yakinSegini = false;
+class Screen{
+ public:
+ 
+   uint8_t layer;
+   void showScreen(){
+     lcd.clear();
+     lcd.setCursor(0,0);
+     lcd.print(appreance[layer][0]);
+     lcd.setCursor(0,1);
+     lcd.print(appreance[layer][1]);
+   };
+
+   void refreshScreen(){
+     refreshAppreance();
+     showScreen();
+   };
+
+   void select(){
+     if(layer<1){
+       this->layer++;
+     }
+   }
+
+   void back(){
+     if(layer>0){
+       this->day = 0;
+       this->layer--;
+     }
+   }
+
+   void addDay(){
+     this->day++;
+   }
+
+   void setPlant(String plant){
+     this->plant= plant;
+   }
+
+ private:
+   int position;
+   int day;
+   int plantIndex;
+   String plant;
+   void refreshAppreance(){
+     appreance[0][0] = "Pilih Tanaman";
+     appreance[0][1] = plant;
+     appreance[1][0] = plant;
+     appreance[1][1] = "days: " + String(this->day);
+   };
+   String appreance[2][2];
+};
+
+Screen screen;
 void setup(){
   Serial.begin(9600);
   // initialize the LCD
@@ -51,33 +104,29 @@ void setup(){
 void loop(){
   tempTime = millis();
   Serial.print(digitalRead(nextButton));
+  delay(1000);
+   screen.setPlant(plants[i%3].plantName);
+   screen.refreshScreen();
   if(backIsPressed){
-    lcd.clear();
-    lcd.print("back");
+    screen.back();
+    screen.refreshScreen();
     backIsPressed = false;
   }
-  if(nextIsPressed){
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Pilih Tanaman");
-    lcd.setCursor(0,1);
-    lcd.print(plants[i%3].plantName);
-    nextIsPressed = false;
-  }
   if(selectIsPressed){
-
     Serial.println(digitalRead(selectButton));
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print(plants[i%3].plantName);
-    lcd.setCursor(0,1);
-    lcd.print(days);
+    screen.select();
+    screen.refreshScreen();
     selectIsPressed = false;
   }
-  delay(1000);
+  if(nextIsPressed & screen.layer == 0){
+    screen.setPlant(plants[i%3].plantName);
+    screen.refreshScreen();
+    nextIsPressed = false;
+  }
   if(millis()-tempTime > millisInDay | tempTime -millis() < sizeof(unsigned long) - millisInDay){
     tempTime = millis();
-    days ++;
+    screen.addDay();
+    screen.refreshScreen();
   }
 }
 
@@ -86,12 +135,10 @@ void back(){
 }
 
 void next(){
-  nextIsPressed = true;
   i++;
+  nextIsPressed = true;
 }
 
 void select(){
-  Serial.println("selsect");
   selectIsPressed = true;
-
 }
