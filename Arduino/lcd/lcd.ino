@@ -8,7 +8,7 @@ const int nextButton = 3;
 const int selectButton = 2;
 const int gndPin = 11;
 const int millisInDay = 86400000;
-const uint8_t plantNumber = 2;
+const uint8_t plantNumber = 85;
 const int chipSelect = 10;
 
 bool backIsPressed;
@@ -220,12 +220,10 @@ String readFile(String fileName){
   myFile = SD.open(fileName);
   String param = "";
   if (myFile) {
-    Serial.println("test.txt:");
 
     // read from the file until there's nothing else in it:
     while (myFile.available()) {
       char temp = (char)myFile.read();
-      Serial.print(temp);
       param += temp;
     }
     // close the file:
